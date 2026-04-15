@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: digital-wallet-deployment
+  labels:
+    app: digital-wallet-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: digital-wallet-system
+  template:
+    metadata:
+      labels:
+        app: digital-wallet-system
+    spec:
+      containers:
+        - name: digital-wallet-container
+          image: digital-wallet-system:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JAVA_OPTS
+              value: "-Xms128m -Xmx512m"
