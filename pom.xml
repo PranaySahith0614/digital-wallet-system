@@ -1,62 +1,425 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+1) Missionaries and Cannibals using BFS
+from collections import deque
 
-    <groupId>com.example</groupId>
-    <artifactId>digital-wallet-system</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+def is_valid_state(m_left, c_left, m_right, c_right):
+    if m_left < 0 or c_left < 0 or m_right < 0 or c_right < 0:
+        return False
+    if m_left > 3 or c_left > 3 or m_right > 3 or c_right > 3:
+        return False
+    if m_left > 0 and c_left > m_left:
+        return False
+    if m_right > 0 and c_right > m_right:
+        return False
+    return True
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.jupiter.version>5.11.2</junit.jupiter.version>
-    </properties>
+def bfs_missionaries_cannibals():
+    start = (3, 3, 0)   # (missionaries_left, cannibals_left, boat_side)
+    goal = (0, 0, 1)
 
-    <dependencies>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    queue = deque()
+    queue.append((start, [start]))
+    visited = set()
+    visited.add(start)
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.0</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>Wallet</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+    moves = [(1,0), (2,0), (0,1), (0,2), (1,1)]
+
+    while queue:
+        (m_left, c_left, boat), path = queue.popleft()
+
+        if (m_left, c_left, boat) == goal:
+            return path
+
+        for m, c in moves:
+            if boat == 0:  # boat on left, move to right
+                new_state = (m_left - m, c_left - c, 1)
+            else:          # boat on right, move to left
+                new_state = (m_left + m, c_left + c, 0)
+
+            nm_left, nc_left, nboat = new_state
+            nm_right = 3 - nm_left
+            nc_right = 3 - nc_left
+
+            if is_valid_state(nm_left, nc_left, nm_right, nc_right) and new_state not in visited:
+                visited.add(new_state)
+                queue.append((new_state, path + [new_state]))
+
+    return None
+
+solution = bfs_missionaries_cannibals()
+
+if solution:
+    print("Solution found:")
+    for state in solution:
+        m_left, c_left, boat = state
+        side = "Left" if boat == 0 else "Right"
+        print(f"Left: M={m_left}, C={c_left} | Right: M={3-m_left}, C={3-c_left} | Boat: {side}")
+else:
+    print("No solution found.")
+2) Water Jug Problem using BFS
+from collections import deque
+
+def bfs_water_jug(jug1, jug2, target):
+    start = (0, 0)
+    queue = deque()
+    queue.append((start, [start]))
+    visited = set()
+    visited.add(start)
+
+    while queue:
+        (a, b), path = queue.popleft()
+
+        if a == target or b == target:
+            return path
+
+        next_states = [
+            (jug1, b),             # fill jug1
+            (a, jug2),             # fill jug2
+            (0, b),                # empty jug1
+            (a, 0),                # empty jug2
+            (a - min(a, jug2 - b), b + min(a, jug2 - b)),  # pour jug1 -> jug2
+            (a + min(b, jug1 - a), b - min(b, jug1 - a))   # pour jug2 -> jug1
+        ]
+
+        for state in next_states:
+            if state not in visited:
+                visited.add(state)
+                queue.append((state, path + [state]))
+
+    return None
+
+jug1 = 4
+jug2 = 3
+target = 2
+
+solution = bfs_water_jug(jug1, jug2, target)
+
+if solution:
+    print("Solution found:")
+    for state in solution:
+        print(state)
+else:
+    print("No solution found.")
+3) Missionaries and Cannibals using DFS
+def is_valid_state(m_left, c_left, m_right, c_right):
+    if m_left < 0 or c_left < 0 or m_right < 0 or c_right < 0:
+        return False
+    if m_left > 3 or c_left > 3 or m_right > 3 or c_right > 3:
+        return False
+    if m_left > 0 and c_left > m_left:
+        return False
+    if m_right > 0 and c_right > m_right:
+        return False
+    return True
+
+def dfs(state, goal, visited, path):
+    if state == goal:
+        return path
+
+    visited.add(state)
+
+    m_left, c_left, boat = state
+    moves = [(1,0), (2,0), (0,1), (0,2), (1,1)]
+
+    for m, c in moves:
+        if boat == 0:
+            new_state = (m_left - m, c_left - c, 1)
+        else:
+            new_state = (m_left + m, c_left + c, 0)
+
+        nm_left, nc_left, nboat = new_state
+        nm_right = 3 - nm_left
+        nc_right = 3 - nc_left
+
+        if is_valid_state(nm_left, nc_left, nm_right, nc_right) and new_state not in visited:
+            result = dfs(new_state, goal, visited, path + [new_state])
+            if result:
+                return result
+
+    return None
+
+start = (3, 3, 0)
+goal = (0, 0, 1)
+
+solution = dfs(start, goal, set(), [start])
+
+if solution:
+    print("Solution found:")
+    for state in solution:
+        m_left, c_left, boat = state
+        side = "Left" if boat == 0 else "Right"
+        print(f"Left: M={m_left}, C={c_left} | Right: M={3-m_left}, C={3-c_left} | Boat: {side}")
+else:
+    print("No solution found.")
+4) Depth Limited Search (DLS)
+graph = {
+    'A': ['B', 'C'],
+    'B': ['D', 'E'],
+    'C': ['F'],
+    'D': [],
+    'E': [],
+    'F': []
+}
+
+def dls(node, goal, limit, path):
+    if node == goal:
+        return path
+
+    if limit <= 0:
+        return None
+
+    for neighbor in graph[node]:
+        result = dls(neighbor, goal, limit - 1, path + [neighbor])
+        if result:
+            return result
+
+    return None
+
+start = 'A'
+goal = 'E'
+depth_limit = 2
+
+result = dls(start, goal, depth_limit, [start])
+
+if result:
+    print("Goal found:", " -> ".join(result))
+else:
+    print("Goal not found within depth limit.")
+5) Iterative Deepening Depth Search (IDDS / IDDFS)
+graph = {
+    'A': ['B', 'C'],
+    'B': ['D', 'E'],
+    'C': ['F'],
+    'D': [],
+    'E': [],
+    'F': []
+}
+
+def dls(node, goal, limit, path):
+    if node == goal:
+        return path
+
+    if limit <= 0:
+        return None
+
+    for neighbor in graph[node]:
+        result = dls(neighbor, goal, limit - 1, path + [neighbor])
+        if result:
+            return result
+
+    return None
+
+def iddfs(start, goal, max_depth):
+    for depth in range(max_depth + 1):
+        result = dls(start, goal, depth, [start])
+        if result:
+            return result
+    return None
+
+start = 'A'
+goal = 'F'
+max_depth = 3
+
+result = iddfs(start, goal, max_depth)
+
+if result:
+    print("Goal found:", " -> ".join(result))
+else:
+    print("Goal not found.")
+6) Uniform Cost Search (UCS)
+import heapq
+
+graph = {
+    'A': [('B', 1), ('C', 4)],
+    'B': [('D', 2), ('E', 5)],
+    'C': [('F', 1)],
+    'D': [],
+    'E': [],
+    'F': []
+}
+
+def ucs(start, goal):
+    pq = [(0, start, [start])]
+    visited = set()
+
+    while pq:
+        cost, node, path = heapq.heappop(pq)
+
+        if node == goal:
+            return cost, path
+
+        if node not in visited:
+            visited.add(node)
+
+            for neighbor, weight in graph[node]:
+                if neighbor not in visited:
+                    heapq.heappush(pq, (cost + weight, neighbor, path + [neighbor]))
+
+    return None, None
+
+cost, path = ucs('A', 'F')
+
+if path:
+    print("Path found:", " -> ".join(path))
+    print("Total cost:", cost)
+else:
+    print("No path found.")
+7) Alpha-Beta Pruning
+def alpha_beta(depth, node, maximizing, values, alpha, beta):
+    if depth == 3:
+        return values[node]
+
+    if maximizing:
+        best = -999
+        for i in range(2):
+            val = alpha_beta(depth + 1, node * 2 + i, False, values, alpha, beta)
+            best = max(best, val)
+            alpha = max(alpha, best)
+            if beta <= alpha:
+                break
+        return best
+    else:
+        best = 999
+        for i in range(2):
+            val = alpha_beta(depth + 1, node * 2 + i, True, values, alpha, beta)
+            best = min(best, val)
+            beta = min(beta, best)
+            if beta <= alpha:
+                break
+        return best
+
+values = [3, 5, 6, 9, 1, 2, 0, -1]
+result = alpha_beta(0, 0, True, values, -999, 999)
+
+print("Optimal value:", result)
+8) Map Coloring Problem using Backtracking
+regions = ['A', 'B', 'C', 'D']
+colors = ['Red', 'Green', 'Blue']
+
+neighbors = {
+    'A': ['B', 'C'],
+    'B': ['A', 'C', 'D'],
+    'C': ['A', 'B', 'D'],
+    'D': ['B', 'C']
+}
+
+def is_valid(region, color, assignment):
+    for neighbor in neighbors[region]:
+        if neighbor in assignment and assignment[neighbor] == color:
+            return False
+    return True
+
+def backtrack(assignment):
+    if len(assignment) == len(regions):
+        return assignment
+
+    unassigned = None
+    for region in regions:
+        if region not in assignment:
+            unassigned = region
+            break
+
+    for color in colors:
+        if is_valid(unassigned, color, assignment):
+            assignment[unassigned] = color
+            result = backtrack(assignment)
+            if result:
+                return result
+            del assignment[unassigned]
+
+    return None
+
+solution = backtrack({})
+
+if solution:
+    print("Color Assignment:")
+    for region in solution:
+        print(region, "->", solution[region])
+else:
+    print("No solution found.")
+9) Sudoku Solver using CSP Backtracking
+def print_board(board):
+    for row in board:
+        print(row)
+
+def is_valid(board, row, col, num):
+    for x in range(9):
+        if board[row][x] == num:
+            return False
+
+    for x in range(9):
+        if board[x][col] == num:
+            return False
+
+    start_row = row - row % 3
+    start_col = col - col % 3
+
+    for i in range(3):
+        for j in range(3):
+            if board[start_row + i][start_col + j] == num:
+                return False
+
+    return True
+
+def solve_sudoku(board):
+    for row in range(9):
+        for col in range(9):
+            if board[row][col] == 0:
+                for num in range(1, 10):
+                    if is_valid(board, row, col, num):
+                        board[row][col] = num
+
+                        if solve_sudoku(board):
+                            return True
+
+                        board[row][col] = 0
+                return False
+    return True
+
+board = [
+    [3, 0, 6, 5, 0, 8, 4, 0, 0],
+    [5, 2, 0, 0, 0, 0, 0, 0, 0],
+    [0, 8, 7, 0, 0, 0, 0, 3, 1],
+    [0, 0, 3, 0, 1, 0, 0, 8, 0],
+    [9, 0, 0, 8, 6, 3, 0, 0, 5],
+    [0, 5, 0, 0, 9, 0, 6, 0, 0],
+    [1, 3, 0, 0, 0, 0, 2, 5, 0],
+    [0, 0, 0, 0, 0, 0, 0, 7, 4],
+    [0, 0, 5, 2, 0, 6, 3, 0, 0]
+]
+
+if solve_sudoku(board):
+    print("Solved Sudoku:")
+    print_board(board)
+else:
+    print("No solution exists.")
+10) Cryptarithmetic Problem using CSP Backtracking
+
+Example: SEND + MORE = MONEY
+
+from itertools import permutations
+
+def solve_cryptarithmetic():
+    letters = ('S', 'E', 'N', 'D', 'M', 'O', 'R', 'Y')
+    digits = range(10)
+
+    for perm in permutations(digits, len(letters)):
+        s, e, n, d, m, o, r, y = perm
+
+        if s == 0 or m == 0:
+            continue
+
+        send = 1000*s + 100*e + 10*n + d
+        more = 1000*m + 100*o + 10*r + e
+        money = 10000*m + 1000*o + 100*n + 10*e + y
+
+        if send + more == money:
+            print("Solution found:")
+            print(f"S={s}, E={e}, N={n}, D={d}, M={m}, O={o}, R={r}, Y={y}")
+            print(f"SEND = {send}")
+            print(f"MORE = {more}")
+            print(f"MONEY = {money}")
+            return
+
+    print("No solution found.")
+
+solve_cryptarithmetic()
